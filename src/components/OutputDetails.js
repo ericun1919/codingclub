@@ -1,6 +1,7 @@
 import React from "react";
 
 const OutputDetails = ({ outputDetails }) => {
+  console.log(outputDetails?.status?.description)
   return (
     <div className="metrics-container mt-4 flex flex-col space-y-3">
       <p className="text-sm">
