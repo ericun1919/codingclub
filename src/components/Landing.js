@@ -17,7 +17,7 @@ import OutputDetails from "./OutputDetails";
 // import LanguagesDropdown from "./LanguagesDropdown";
 
 
-const RAPID_API_URL = "https://judge0-ce.p.rapidapi.com/submissions"
+const RAPID_API_URL = "https://judge0-ce.p.rapidapi.com/submissions/batch"
 const RAPID_API_HOST = "judge0-ce.p.rapidapi.com"
 const RAPID_API_KEY = "fbe7df1e99msh10f296f62348e88p18ba83jsn4f2f578fb950"
 const qid = '1002';
@@ -33,6 +33,26 @@ const Landing = () => {
   const [outputDetails, setOutputDetails] = useState(null);
   const [processing, setProcessing] = useState(null);
   const [submitting, setSubmitting] = useState(null);
+  const [form, setForm] = useState([]);
+
+
+  
+  function testCaseToForm(){
+    {testcase.map(t => {
+      let newItem = {
+        language_id: language.id,
+        // encode source code in base64
+        expected_output: btoa(t.output),
+        source_code: btoa(code),
+        stdin: btoa(t.input),
+      }
+      setForm([...form, newItem]);
+    }
+    )}
+  };
+  
+   
+  
   // const [theme, setTheme] = useState("cobalt");
   const theme = {label: 'Oceanic Next', value: 'oceanic-next', key: 'oceanic-next'};
   // const [language, setLanguage] = useState(languageOptions[0]);
@@ -125,13 +145,8 @@ const Landing = () => {
   const handleSubmit = () => {
     
     setSubmitting(true);
-    const formData = {
-      language_id: language.id,
-      // encode source code in base64
-      expected_output: btoa(testcase[0].output),
-      source_code: btoa(code),
-      stdin: btoa(testcase[0].input),
-    };
+    testCaseToForm();
+    const formData = form;
     const options = {
       method: "POST",
       url: RAPID_API_URL,
@@ -171,16 +186,12 @@ const Landing = () => {
 
   const handleCompile = () => {
     setProcessing(true);
-    {testcase.map(t => {
-
-    })}
-
-    const formData = {
+    const formData = [{
       language_id: language.id,
       // encode source code in base64
       source_code: btoa(code),
       stdin: btoa(customInput),
-    };
+    }];
     const options = {
       method: "POST",
       url: RAPID_API_URL,
