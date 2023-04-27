@@ -9,63 +9,40 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { defineTheme } from "../lib/defineTheme";
 import useKeyPress from "../hooks/useKeyPress";
-import Footer from "./Footer";
+// import Footer from "./Footer";
 import OutputWindow from "./OutputWindow";
 import CustomInput from "./CustomInput";
 import OutputDetails from "./OutputDetails";
-import ThemeDropdown from "./ThemeDropdown";
-import LanguagesDropdown from "./LanguagesDropdown";
+// import ThemeDropdown from "./ThemeDropdown";
+// import LanguagesDropdown from "./LanguagesDropdown";
 
 
 const RAPID_API_URL = "https://judge0-ce.p.rapidapi.com/submissions"
 const RAPID_API_HOST = "judge0-ce.p.rapidapi.com"
 const RAPID_API_KEY = "fbe7df1e99msh10f296f62348e88p18ba83jsn4f2f578fb950"
 
-const javascriptDefault = `/**
-* Problem: Binary Search: Search a sorted array for a target value.
-*/
-
-// Time: O(log n)
-const binarySearch = (arr, target) => {
- return binarySearchHelper(arr, target, 0, arr.length - 1);
-};
-
-const binarySearchHelper = (arr, target, start, end) => {
- if (start > end) {
-   return false;
- }
- let mid = Math.floor((start + end) / 2);
- if (arr[mid] === target) {
-   return mid;
- }
- if (arr[mid] < target) {
-   return binarySearchHelper(arr, target, mid + 1, end);
- }
- if (arr[mid] > target) {
-   return binarySearchHelper(arr, target, start, mid - 1);
- }
-};
-
-const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const target = 5;
-console.log(binarySearch(arr, target));
-`;
+const question = `Given an integer x, return true if x is a  palindrome ,and false otherwise.`;
+const pythonDefault = `print('Hello World')`;
 
 const Landing = () => {
-  const [code, setCode] = useState(javascriptDefault);
+  const [code, setCode] = useState(pythonDefault);
   const [customInput, setCustomInput] = useState("");
   const [outputDetails, setOutputDetails] = useState(null);
   const [processing, setProcessing] = useState(null);
-  const [theme, setTheme] = useState("cobalt");
-  const [language, setLanguage] = useState(languageOptions[0]);
+  const [submitting, setSubmitting] = useState(null);
+  // const [theme, setTheme] = useState("cobalt");
+  const theme = {label: 'Oceanic Next', value: 'oceanic-next', key: 'oceanic-next'};
+  // const [language, setLanguage] = useState(languageOptions[0]);
+  const language = {id: 71, name: 'Python (3.8.1)', label: 'Python (3.8.1)', value: 'python'};
 
   const enterPress = useKeyPress("Enter");
   const ctrlPress = useKeyPress("Control");
 
-  const onSelectChange = (sl) => {
-    console.log("selected Option...", sl);
-    setLanguage(sl);
-  };
+  // const onSelectChange = (sl) => {
+  //   console.log("selected Option...", sl);
+  //   // setLanguage(sl);
+  //   console.log(language)
+  // };
 
   useEffect(() => {
     if (enterPress && ctrlPress) {
@@ -74,10 +51,12 @@ const Landing = () => {
       handleCompile();
     }
   }, [ctrlPress, enterPress]);
+
   const onChange = (action, data) => {
     switch (action) {
       case "code": {
         setCode(data);
+        // console.log(data);
         break;
       }
       default: {
@@ -85,6 +64,52 @@ const Landing = () => {
       }
     }
   };
+  const handleSubmit = () => {
+    setSubmitting(true);
+    const formData = {
+      language_id: language.id,
+      // encode source code in base64
+      expected_output: btoa('True'),
+      source_code: btoa(code),
+      stdin: btoa('121'),
+    };
+    const options = {
+      method: "POST",
+      url: RAPID_API_URL,
+      params: { base64_encoded: "true", fields: "*" },
+      headers: {
+        "content-type": "application/json",
+        "X-RapidAPI-Host": RAPID_API_HOST,
+        "X-RapidAPI-Key": RAPID_API_KEY,
+      },
+      data: formData,
+    };
+
+    axios
+      .request(options)
+      .then(function (response) {
+        console.log("res.data", response.data);
+        const token = response.data.token;
+        checkStatus(token);
+      })
+      .catch((err) => {
+        let error = err.response ? err.response.data : err;
+        // get error status
+        let status = err.response.status;
+        console.log("status", status);
+        if (status === 429) {
+          console.log("too many requests", status);
+
+          showErrorToast(
+            `Quota of 100 requests exceeded for the Day! Please read the blog on freeCodeCamp to learn how to setup your own RAPID API Judge0!`,
+            10000
+          );
+        }
+        setSubmitting(false);
+        console.log("catch block...", error);
+      });
+  };
+
   const handleCompile = () => {
     setProcessing(true);
     const formData = {
@@ -99,7 +124,6 @@ const Landing = () => {
       params: { base64_encoded: "true", fields: "*" },
       headers: {
         "content-type": "application/json",
-        "Content-Type": "application/json",
         "X-RapidAPI-Host": RAPID_API_HOST,
         "X-RapidAPI-Key": RAPID_API_KEY,
       },
@@ -154,32 +178,34 @@ const Landing = () => {
         return;
       } else {
         setProcessing(false);
+        setSubmitting(false);
         setOutputDetails(response.data);
         showSuccessToast(`Compiled Successfully!`);
-        console.log("response.data", response.data);
         return;
       }
     } catch (err) {
       console.log("err", err);
       setProcessing(false);
+      setSubmitting(false);
       showErrorToast();
     }
   };
 
-  function handleThemeChange(th) {
-    const theme = th;
-    console.log("theme...", theme);
+  // function handleThemeChange(th) {
+  //   const theme = th;
+  //   console.log("theme...", theme);
 
-    if (["light", "vs-dark"].includes(theme.value)) {
-      setTheme(theme);
-    } else {
-      defineTheme(theme.value).then((_) => setTheme(theme));
-    }
-  }
+  //   if (["light", "vs-dark"].includes(theme.value)) {
+  //     setTheme(theme);
+  //   } else {
+  //     defineTheme(theme.value).then((_) => setTheme(theme));
+  //   }
+  // }
   useEffect(() => {
-    defineTheme("oceanic-next").then((_) =>
-      setTheme({ value: "oceanic-next", label: "Oceanic Next" })
-    );
+    defineTheme("oceanic-next");
+    // defineTheme("oceanic-next").then((_) =>
+    //   setTheme({ value: "oceanic-next", label: "Oceanic Next" })
+    ;
   }, []);
 
   const showSuccessToast = (msg) => {
@@ -219,7 +245,7 @@ const Landing = () => {
         pauseOnHover
       />
 
-      <a
+      {/* <a
         href="https://github.com/manuarora700/react-code-editor"
         title="Fork me on GitHub"
         class="github-corner"
@@ -246,25 +272,48 @@ const Landing = () => {
             class="octo-body"
           ></path>
         </svg>
-      </a>
+      </a> */}
 
       <div className="h-4 w-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"></div>
-      <div className="flex flex-row">
-        <div className="px-4 py-2">
+      {/* <div className="flex flex-row"> */}
+        {/* <div className="px-4 py-2">
           <LanguagesDropdown onSelectChange={onSelectChange} />
-        </div>
-        <div className="px-4 py-2">
+        </div> */}
+        {/* <div className="px-4 py-2">
           <ThemeDropdown handleThemeChange={handleThemeChange} theme={theme} />
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
       <div className="flex flex-row space-x-4 items-start px-4 py-4">
-        <div className="flex flex-col w-full h-full justify-start items-end">
-          <CodeEditorWindow
-            code={code}
-            onChange={onChange}
-            language={language?.value}
-            theme={theme.value}
-          />
+        <div className="w-full h-full">
+          <div className = "overflow-y-auto border-2 h-48 min-h-full mb-6">
+            <pre className = "p-1">
+              {question}
+              <br></br>
+              <b>Example1:</b>
+              <br></br>
+              Input: 121
+              <br></br>
+              Output: True
+              <br></br>
+              Explanation: 121 reads as 121 from left to right and from right to left.
+              <br></br>
+              <strong>Example2:</strong>
+              <br></br>
+              input: 10
+              <br></br>
+              output: false
+              <br></br>
+              explanation: Reads 01 from right to left. Therefore it is not a palindrome.
+            </pre>
+          </div>
+          <div className="flex flex-col w-full h-full justify-start items-end">
+            <CodeEditorWindow
+              code={code}
+              onChange={onChange}
+              language={language?.value}
+              theme={theme.value}
+            />
+          </div>
         </div>
 
         <div className="right-container flex flex-shrink-0 w-[30%] flex-col">
@@ -282,13 +331,25 @@ const Landing = () => {
                 !code ? "opacity-50" : ""
               )}
             >
+              
               {processing ? "Processing..." : "Compile and Execute"}
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!code} 
+              className={classnames(
+                "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
+                !code ? "opacity-50" : ""
+              )}
+            >
+              
+              {submitting ? "Processing..." : "Submit"}
             </button>
           </div>
           {outputDetails && <OutputDetails outputDetails={outputDetails} />}
         </div>
       </div>
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 };

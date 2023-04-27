@@ -25,7 +25,9 @@ const OutputWindow = ({ outputDetails }) => {
           {`Time Limit Exceeded`}
         </pre>
       );
-    } else {
+    } else if (statusId === 4) {
+      return(<pre></pre>);
+    }else {
       return (
         <pre className="px-2 py-1 font-normal text-xs text-red-500">
           {atob(outputDetails?.stderr)}
