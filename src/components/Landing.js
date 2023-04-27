@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import CodeEditorWindow from "./CodeEditorWindow";
 import axios from "axios";
 import { classnames } from "../utils/general";
-import { languageOptions } from "../constants/languageOptions";
+// import { languageOptions } from "../constants/languageOptions";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -20,11 +20,14 @@ import OutputDetails from "./OutputDetails";
 const RAPID_API_URL = "https://judge0-ce.p.rapidapi.com/submissions"
 const RAPID_API_HOST = "judge0-ce.p.rapidapi.com"
 const RAPID_API_KEY = "fbe7df1e99msh10f296f62348e88p18ba83jsn4f2f578fb950"
-
-const question = `Given an integer x, return true if x is a  palindrome ,and false otherwise.`;
+const qid = '1002';
+// const question = `Given an integer x, return true if x is a  palindrome ,and false otherwise.`;
 const pythonDefault = `print('Hello World')`;
 
 const Landing = () => {
+  const [question, setQuestion] = useState(null);
+  const [testcase, setTestcase] = useState([]);
+  const [example, setExample] = useState([]);
   const [code, setCode] = useState(pythonDefault);
   const [customInput, setCustomInput] = useState("");
   const [outputDetails, setOutputDetails] = useState(null);
@@ -34,7 +37,6 @@ const Landing = () => {
   const theme = {label: 'Oceanic Next', value: 'oceanic-next', key: 'oceanic-next'};
   // const [language, setLanguage] = useState(languageOptions[0]);
   const language = {id: 71, name: 'Python (3.8.1)', label: 'Python (3.8.1)', value: 'python'};
-
   const enterPress = useKeyPress("Enter");
   const ctrlPress = useKeyPress("Control");
 
@@ -43,6 +45,62 @@ const Landing = () => {
   //   // setLanguage(sl);
   //   console.log(language)
   // };
+  useEffect(() => {
+  let options = {
+    method: "GET",
+    url: 'https://api.bricks.academy/api:_codingclub_ide/codingclub_ide_question/' + qid,
+  };
+  axios
+  .request(options)
+  .then(function (response) {
+    console.log(response.data);
+    setQuestion(response.data['question']);
+  })
+  .catch((err) => {
+    let error = err.response ? err.response.data : err;
+    // get error status
+    console.log("catch block...", error);
+  })
+  getQuestion();
+  getTestcase();
+  },[]);
+
+  function getTestcase(){
+    const options = {
+      method: "GET",
+      url: 'https://api.bricks.academy/api:_codingclub_ide/codingclub_ide_testcase/' + qid + '/true',
+    };
+    axios
+    .request(options)
+    .then(function (response) {
+      console.log(response.data);
+      setTestcase(response.data);
+    })
+    .catch((err) => {
+      let error = err.response ? err.response.data : err;
+      // get error status
+      console.log("catch block...", error);
+    });
+  }
+  function getQuestion(){
+    const options = {
+      method: "GET",
+      url: 'https://api.bricks.academy/api:_codingclub_ide/codingclub_ide_testcase/' + qid,
+    };
+    axios
+    .request(options)
+    .then(function (response) {
+      console.log(response.data);
+      setExample(response.data);
+    })
+    .catch((err) => {
+      let error = err.response ? err.response.data : err;
+      // get error status
+      console.log("catch block...", error);
+    });
+  }
+
+
 
   useEffect(() => {
     if (enterPress && ctrlPress) {
@@ -65,13 +123,14 @@ const Landing = () => {
     }
   };
   const handleSubmit = () => {
+    
     setSubmitting(true);
     const formData = {
       language_id: language.id,
       // encode source code in base64
-      expected_output: btoa('True'),
+      expected_output: btoa(testcase[0].output),
       source_code: btoa(code),
-      stdin: btoa('121'),
+      stdin: btoa(testcase[0].input),
     };
     const options = {
       method: "POST",
@@ -112,6 +171,10 @@ const Landing = () => {
 
   const handleCompile = () => {
     setProcessing(true);
+    {testcase.map(t => {
+
+    })}
+
     const formData = {
       language_id: language.id,
       // encode source code in base64
@@ -287,7 +350,24 @@ const Landing = () => {
         <div className="w-full h-full">
           <div className = "overflow-y-auto border-2 h-48 min-h-full mb-6">
             <pre className = "p-1">
+              
               {question}
+              <br></br>
+              <br></br>
+              <div>
+                {example.map(e => {
+                    return (
+                      <div >
+                        <h2>input = {e.input}</h2>
+                        <h2>output: {e.output}</h2>
+                        <h2>explanation: {e.explanation}</h2>
+                        <hr />
+                      </div>
+                    );
+                })}
+              </div>
+
+              {/* <br></br>
               <br></br>
               <b>Example1:</b>
               <br></br>
@@ -303,7 +383,7 @@ const Landing = () => {
               <br></br>
               output: false
               <br></br>
-              explanation: Reads 01 from right to left. Therefore it is not a palindrome.
+              explanation: Reads 01 from right to left. Therefore it is not a palindrome. */}
             </pre>
           </div>
           <div className="flex flex-col w-full h-full justify-start items-end">
