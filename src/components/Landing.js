@@ -282,14 +282,20 @@ const Landing = () => {
     };
     try {
       let response = await axios.request(options);
-      let statusId = response.data.submissions[response.data.submissions.length - 1].status?.id;
+      let data = response.data.submissions;
+      let processing = false
+      {data.map(d => {
+        if (d.status?.id === 1 || d.status?.id === 2){
+          processing = true
+        }
+      })}
 
       // Processed - we have a result
-      if (statusId === 1 || statusId === 2) {
+      if (processing) {
         // still processing
         setTimeout(() => {
           checkStatus_Submit(token);
-        }, 2000);
+        }, 4000);
         return;
       } else {
 
