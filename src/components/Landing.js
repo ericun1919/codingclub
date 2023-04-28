@@ -25,7 +25,7 @@ const qid = '1002';
 const pythonDefault = `print('Hello World')`;
 
 const Landing = () => {
-  const [question, setQuestion] = useState(null);
+  const [question, setQuestion] = useState({});
   const [testcase, setTestcase] = useState([]);
   const [example, setExample] = useState([]);
   const [code, setCode] = useState(pythonDefault);
@@ -60,7 +60,7 @@ const Landing = () => {
   axios
   .request(options)
   .then(function (response) {
-    setQuestion(response.data['question']);
+    setQuestion(response.data);
   })
   .catch((err) => {
     let error = err.response ? err.response.data : err;
@@ -369,84 +369,49 @@ const Landing = () => {
         pauseOnHover
       />
 
-      {/* <a
-        href="https://github.com/manuarora700/react-code-editor"
-        title="Fork me on GitHub"
-        class="github-corner"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <svg
-          width="50"
-          height="50"
-          viewBox="0 0 250 250"
-          className="relative z-20 h-20 w-20"
-        >
-          <title>Fork me on GitHub</title>
-          <path d="M0 0h250v250"></path>
-          <path
-            d="M127.4 110c-14.6-9.2-9.4-19.5-9.4-19.5 3-7 1.5-11 1.5-11-1-6.2 3-2 3-2 4 4.7 2 11 2 11-2.2 10.4 5 14.8 9 16.2"
-            fill="currentColor"
-            style={{ transformOrigin: "130px 110px" }}
-            class="octo-arm"
-          ></path>
-          <path
-            d="M113.2 114.3s3.6 1.6 4.7.6l15-13.7c3-2.4 6-3 8.2-2.7-8-11.2-14-25 3-41 4.7-4.4 10.6-6.4 16.2-6.4.6-1.6 3.6-7.3 11.8-10.7 0 0 4.5 2.7 6.8 16.5 4.3 2.7 8.3 6 12 9.8 3.3 3.5 6.7 8 8.6 12.3 14 3 16.8 8 16.8 8-3.4 8-9.4 11-11.4 11 0 5.8-2.3 11-7.5 15.5-16.4 16-30 9-40 .2 0 3-1 7-5.2 11l-13.3 11c-1 1 .5 5.3.8 5z"
-            fill="currentColor"
-            class="octo-body"
-          ></path>
-        </svg>
-      </a> */}
+      <div className="h-4 w-full bg-gradient-to-r from-violet-900 via-indigo-950 to-violet-600"></div>
+      <nav class="bg-white border-gray-200">
+        <div class="max-w-screen-xl flex flex-wrap items-center justify-between  p-4">
+          <a href="https://flowbite.com/" class="flex items-center">
+              <img src={process.env.PUBLIC_URL + '/Logo.png'}  class="h-16 mr-3" alt="Flowbite Logo" />
+          </a>
 
-      <div className="h-4 w-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"></div>
-      {/* <div className="flex flex-row"> */}
-        {/* <div className="px-4 py-2">
-          <LanguagesDropdown onSelectChange={onSelectChange} />
-        </div> */}
-        {/* <div className="px-4 py-2">
-          <ThemeDropdown handleThemeChange={handleThemeChange} theme={theme} />
-        </div> */}
-      {/* </div> */}
+          {/* <div class="hidden w-full md:block md:w-auto" id="navbar-default">
+            <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
+              <li>
+                <a href="#" class="block py-2 pl-3 pr-4 text-white bg-blue-700 rounded md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500" aria-current="page">Home</a>
+              </li>
+            </ul>
+          </div> */}
+        </div>
+      </nav>
+
       <div className="flex flex-row space-x-4 items-start px-4 py-4">
         <div className="w-full h-full">
-          <div className = "overflow-y-auto border-2 h-48 min-h-full mb-6">
-            <pre className = "p-1">
-              
-              {question}
+          <div className = "overflow-y-auto h-90 min-h-full mb-6">
+            <div className = "p-3 bg-stone-50 rounded-tl-lg">
+              <h1 className='text-xl font-mono '>ID: {question.question_id}</h1>
+              <h1 className='text-xl font-mono '>{question.question}</h1>
               <br></br>
+              <br></br>
+              <h1 className='text-xl font-mono'>
+                Examples
+              </h1>
               <br></br>
               <div>
                 {example.map(e => {
                     return (
-                      <div >
-                        <h2>input = {e.input}</h2>
-                        <h2>output: {e.output}</h2>
-                        <h2>explanation: {e.explanation}</h2>
-                        <hr />
+                      <div className='p-5 bg-stone-100 border-4 rounded-lg m-3'>
+                        <h4>Input = {e.input}</h4>
+                        <h4>Output: {e.output}</h4>
+                        <h4>Explanation: {e.explanation}</h4>
                       </div>
                     );
                 })}
               </div>
-
-              {/* <br></br>
-              <br></br>
-              <b>Example1:</b>
-              <br></br>
-              Input: 121
-              <br></br>
-              Output: True
-              <br></br>
-              Explanation: 121 reads as 121 from left to right and from right to left.
-              <br></br>
-              <strong>Example2:</strong>
-              <br></br>
-              input: 10
-              <br></br>
-              output: false
-              <br></br>
-              explanation: Reads 01 from right to left. Therefore it is not a palindrome. */}
-            </pre>
+            </div>
           </div>
+
           <div className="flex flex-col w-full h-full justify-start items-end">
             <CodeEditorWindow
               code={code}
@@ -487,10 +452,11 @@ const Landing = () => {
               {submitting ? "Processing..." : "Submit"}
             </button>
           </div>
+
           {outputDetails && <OutputDetails outputDetails={outputDetails} />}
+          
         </div>
       </div>
-      {/* <Footer /> */}
     </>
   );
 };
