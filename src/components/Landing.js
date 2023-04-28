@@ -3,7 +3,7 @@ import CodeEditorWindow from "./CodeEditorWindow";
 import axios from "axios";
 import { classnames } from "../utils/general";
 // import { languageOptions } from "../constants/languageOptions";
-
+import ReactDOM from 'react-dom';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -13,6 +13,7 @@ import useKeyPress from "../hooks/useKeyPress";
 import OutputWindow from "./OutputWindow";
 import CustomInput from "./CustomInput";
 import OutputDetails from "./OutputDetails";
+import SubmitOutputDetails from "./SubmitOutputDetails";
 // import ThemeDropdown from "./ThemeDropdown";
 // import LanguagesDropdown from "./LanguagesDropdown";
 
@@ -31,6 +32,7 @@ const Landing = () => {
   const [code, setCode] = useState(pythonDefault);
   const [customInput, setCustomInput] = useState("");
   const [outputDetails, setOutputDetails] = useState(null);
+  const [submitOutputDetails, setSubmitOutputDetails] = useState(null);
   const [processing, setProcessing] = useState(null);
   const [submitting, setSubmitting] = useState(null);
 
@@ -301,10 +303,9 @@ const Landing = () => {
 
         setProcessing(false);
         setSubmitting(false);
-        {response.data.submissions.map(d => {
-          console.log(d);
-          setOutputDetails(d);
-        })}
+
+        setSubmitOutputDetails(response.data.submissions);
+
         showSuccessToast(`Compiled Successfully!`);
         return;
       }
@@ -315,20 +316,9 @@ const Landing = () => {
       showErrorToast();
     }
   };
-  // function handleThemeChange(th) {
-  //   const theme = th;
-  //   console.log("theme...", theme);
 
-  //   if (["light", "vs-dark"].includes(theme.value)) {
-  //     setTheme(theme);
-  //   } else {
-  //     defineTheme(theme.value).then((_) => setTheme(theme));
-  //   }
-  // }
   useEffect(() => {
     defineTheme("oceanic-next");
-    // defineTheme("oceanic-next").then((_) =>
-    //   setTheme({ value: "oceanic-next", label: "Oceanic Next" })
     ;
   }, []);
 
@@ -355,6 +345,47 @@ const Landing = () => {
     });
   };
 
+  function Overlay() {
+    return ReactDOM.createPortal(
+      <div className="right-container flex flex-shrink-0 w-[30%] flex-col fixed  top-10 right-0">
+      <OutputWindow outputDetails={outputDetails} />
+      <div className="flex flex-col items-end">
+        <CustomInput
+          customInput={customInput}
+          setCustomInput={setCustomInput}
+        />
+        <button
+          onClick={handleCompile}
+          disabled={!code}
+          className={classnames(
+            "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
+            !code ? "opacity-50" : ""
+          )}
+        >
+          
+          {processing ? "Processing..." : "Compile and Execute"}
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!code} 
+          className={classnames(
+            "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
+            !code ? "opacity-50" : ""
+          )}
+        >
+          
+          {submitting ? "Processing..." : "Submit"}
+        </button>
+      </div>
+
+      {outputDetails && <OutputDetails outputDetails={outputDetails} />}
+      {submitOutputDetails && <SubmitOutputDetails submitOutputDetails={submitOutputDetails} />}
+      
+    </div>,
+    document.querySelector('body')
+    );
+  }
+
   return (
     <>
       <ToastContainer
@@ -370,10 +401,10 @@ const Landing = () => {
       />
 
       <div className="h-4 w-full bg-gradient-to-r from-violet-900 via-indigo-950 to-violet-600"></div>
-      <nav class="bg-white border-gray-200">
-        <div class="max-w-screen-xl flex flex-wrap items-center justify-between  p-4">
-          <a class="flex items-center">
-              <img src={process.env.PUBLIC_URL + '/LogoHome.png'}  class="h-16 mr-3" alt="HomeLogo" />
+      <nav className ="bg-white border-gray-200">
+        <div className="max-w-screen-xl flex flex-wrap items-center justify-between  p-4">
+          <a className="flex items-center">
+              <img src={process.env.PUBLIC_URL + '/LogoHome.png'}  className="h-16 mr-3" alt="HomeLogo" />
           </a>
 
           {/* <div class="hidden w-full md:block md:w-auto" id="navbar-default">
@@ -386,7 +417,7 @@ const Landing = () => {
         </div>
       </nav>
 
-      <div className="flex flex-row space-x-4 items-start px-4 py-4">
+      <div className="flex flex-row space-x-4 items-start px-4 py-4 w-[70%]">
         <div className="w-full h-full">
           <div className = "overflow-y-auto h-90 min-h-full mb-6">
             <div className = "p-3 bg-stone-50 rounded-tl-lg">
@@ -421,42 +452,8 @@ const Landing = () => {
             />
           </div>
         </div>
-
-        <div className="right-container flex flex-shrink-0 w-[30%] flex-col">
-          <OutputWindow outputDetails={outputDetails} />
-          <div className="flex flex-col items-end">
-            <CustomInput
-              customInput={customInput}
-              setCustomInput={setCustomInput}
-            />
-            <button
-              onClick={handleCompile}
-              disabled={!code}
-              className={classnames(
-                "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
-                !code ? "opacity-50" : ""
-              )}
-            >
-              
-              {processing ? "Processing..." : "Compile and Execute"}
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!code} 
-              className={classnames(
-                "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
-                !code ? "opacity-50" : ""
-              )}
-            >
-              
-              {submitting ? "Processing..." : "Submit"}
-            </button>
-          </div>
-
-          {outputDetails && <OutputDetails outputDetails={outputDetails} />}
-          
-        </div>
       </div>
+      {Overlay()};
     </>
   );
 };
