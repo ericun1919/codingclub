@@ -372,8 +372,8 @@ const Landing = () => {
       <div className="h-4 w-full bg-gradient-to-r from-violet-900 via-indigo-950 to-violet-600"></div>
       <nav class="bg-white border-gray-200">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between  p-4">
-          <a href="https://flowbite.com/" class="flex items-center">
-              <img src={process.env.PUBLIC_URL + '/Logo.png'}  class="h-16 mr-3" alt="Flowbite Logo" />
+          <a class="flex items-center">
+              <img src={process.env.PUBLIC_URL + '/LogoHome.png'}  class="h-16 mr-3" alt="HomeLogo" />
           </a>
 
           {/* <div class="hidden w-full md:block md:w-auto" id="navbar-default">
