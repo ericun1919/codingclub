@@ -1,87 +1,166 @@
 import React, { useEffect, useState } from "react";
 import CodeEditorWindow from "./CodeEditorWindow";
 import axios from "axios";
+import LanguagesDropdown from "./LanguagesDropdown";
+import ThemeDropdown from "./ThemeDropdown";
+import FontSizeDropdown from "./FontSizeDropdown";
+import { languageOptions } from "../constants/languageOptions";
+import { themeOptions } from "../constants/themeOptions";
+import { useTranslation, Trans } from 'react-i18next';
+import { Alert } from '@coreui/react';
+import { CAccordionBody } from '@coreui/react'
+import { CAccordionHeader } from '@coreui/react'
+import { CAccordionItem } from '@coreui/react'
+import { CAccordion } from '@coreui/react'
+import '@coreui/coreui/dist/css/coreui.min.css'
 import { classnames } from "../utils/general";
-// import { languageOptions } from "../constants/languageOptions";
 import ReactDOM from 'react-dom';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 import { defineTheme } from "../lib/defineTheme";
 import useKeyPress from "../hooks/useKeyPress";
-// import Footer from "./Footer";
 import OutputWindow from "./OutputWindow";
 import CustomInput from "./CustomInput";
 import OutputDetails from "./OutputDetails";
-import SubmitOutputDetails from "./SubmitOutputDetails";
-// import ThemeDropdown from "./ThemeDropdown";
-// import LanguagesDropdown from "./LanguagesDropdown";
-
+import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import Submit from "./Submit";
+import { useRef } from 'react';
+import { redirect } from "react-router-dom";
 
 const RAPID_API_URL = "https://judge0-ce.p.rapidapi.com/submissions"
 const RAPID_API_HOST = "judge0-ce.p.rapidapi.com"
 const RAPID_API_KEY = "fbe7df1e99msh10f296f62348e88p18ba83jsn4f2f578fb950"
-const qid = '1002';
-// const question = `Given an integer x, return true if x is a  palindrome ,and false otherwise.`;
-const pythonDefault = `print('Hello World')`;
+const lngs = {
+  zh: { nativeName: 'Chinese' },
+  en: { nativeName: 'English' }
+};
 
 const Landing = () => {
-  const [question, setQuestion] = useState({});
+  const [fontSize, setFontSize] = useState(24);
+  const inputArea = document.querySelector('.inputarea');
+  const [language, setLanguage] = useState(languageOptions[0]);
+  const [theme, setTheme] = useState(themeOptions[1]);
+  const { t, i18n } = useTranslation();
+  const [submitExpanded, setSubmitExpanded] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams({pid: -1, user_id: -1, language:'zh'});
+  const user_id = searchParams.get('user_id');
+  const qid = searchParams.get('pid');
+  const lan = searchParams.get('language');
+  const [PythonDefault, setPythonDefault] = useState('');
   const [testcase, setTestcase] = useState([]);
-  const [example, setExample] = useState([]);
-  const [code, setCode] = useState(pythonDefault);
+  const [code, setCode] = useState('');
   const [customInput, setCustomInput] = useState("");
   const [outputDetails, setOutputDetails] = useState(null);
-  const [submitOutputDetails, setSubmitOutputDetails] = useState(null);
+  const [compileOutputDetails, setCompileOutputDetails] = useState(null);
+  const [submitOutputDetails, setSubmitOutputDetails] = useState([]);
   const [processing, setProcessing] = useState(null);
   const [submitting, setSubmitting] = useState(null);
-
-
-  
-
-  
-   
-  
-  // const [theme, setTheme] = useState("cobalt");
-  const theme = {label: 'Oceanic Next', value: 'oceanic-next', key: 'oceanic-next'};
-  // const [language, setLanguage] = useState(languageOptions[0]);
-  const language = {id: 71, name: 'Python (3.8.1)', label: 'Python (3.8.1)', value: 'python'};
   const enterPress = useKeyPress("Enter");
   const ctrlPress = useKeyPress("Control");
 
-  // const onSelectChange = (sl) => {
-  //   console.log("selected Option...", sl);
-  //   // setLanguage(sl);
-  //   console.log(language)
-  // };
-  useEffect(() => {
-  let options = {
-    method: "GET",
-    url: 'https://api.bricks.academy/api:_codingclub_ide/codingclub_ide_question/' + qid,
+  const onSelectChange = (sl) => {
+    setLanguage(sl);
   };
-  axios
-  .request(options)
-  .then(function (response) {
-    setQuestion(response.data);
-  })
-  .catch((err) => {
-    let error = err.response ? err.response.data : err;
-    // get error status
-    console.log("catch block...", error);
-  })
-  getQuestion();
-  getTestcase();
-  },[]);
+  const onThemeSelectChange = (t1) => {
+    setTheme(t1);
+  }
+  const onFontSizeSelectChange = (fs) => {
+    setFontSize(fs.value);
+  };
 
-  function getTestcase(){
+  function b64EncodeUnicode(str) {
+    // first we use encodeURIComponent to get percent-encoded UTF-8,
+    // then we convert the percent encodings into raw bytes which
+    // can be fed into btoa.
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function toSolidBytes(match, p1) {
+            return String.fromCharCode('0x' + p1);
+    }));
+  }
+  React.useEffect(() => {
+
+    if (inputArea){
+      inputArea.addEventListener("keydown", keyPress);
+      return () => {
+        inputArea.removeEventListener("keydown", keyPress);
+      };
+    }
+  });
+
+  const keyPress = (e) =>{
+    if (e.key === "Enter" && e.ctrlKey === true ){
+      sendData();
+      console.log(customInput)
+    }
+  }
+
+  // const navigate = useNavigate();
+  // useEffect(() => {
+  //   setInterval(pingServer, 5000);
+  //   window.addEventListener("beforeunload", (ev) => 
+  //   {  
+  //     const options = {
+  //       method: "POST",
+  //       url: "https://api.bricks.academy/api:dIOXaIX5/online",
+  //       data: {
+  //           "lastonline": null,
+  //           "s_id": 1
+  //         },
+  //       headers: {
+  //       "content-type": "application/json",
+  //       },
+  //     };
+  //     axios
+  //     .request(options)
+  //     .then(function (response) {
+  //       setQuestion(response.data);
+  //     })
+  //     .catch((err) => {
+  //       let error = err.response ? err.response.data : err;
+  //       // get error status
+  //       console.log("catch block...", error);
+  //     });
+  //     const date = new Date();
+  //     console.log(date);
+  //   });
+  // }, []);
+
+
+  
+  // function handleRemoveQueryStrings() {
+  //   navigate({
+  //     pathname: window.location.pathname,
+  //     search: '',
+  //   });
+  // }
+  function handleThemeChange(th) {
+    const theme = th;
+
+    if (["light", "vs-dark"].includes(theme.value)) {
+      setTheme(theme);
+    } else {
+      defineTheme(theme.value).then((_) => setTheme(theme));
+    }
+  }
+  
+  function pingServer() {
+    const date = new Date();
     const options = {
-      method: "GET",
-      url: 'https://api.bricks.academy/api:_codingclub_ide/codingclub_ide_testcase/' + qid + '/true',
+      method: "POST",
+      url: "https://api.bricks.academy/api:dIOXaIX5/online",
+      data: {
+          "lastonline": date,
+          "s_id": 2
+        },
+      headers: {
+      "content-type": "application/json",
+      },
     };
     axios
     .request(options)
     .then(function (response) {
-      setTestcase(response.data);
+      //pass
     })
     .catch((err) => {
       let error = err.response ? err.response.data : err;
@@ -89,38 +168,81 @@ const Landing = () => {
       console.log("catch block...", error);
     });
   }
+
+  useEffect(() => {
+    if (user_id > 0 && qid > 0){
+      getQuestion();
+      getSession();
+    }
+    i18n.changeLanguage(lan);
+    // handleRemoveQueryStrings();
+  },[]);
+  
+  const getSession = () => {
+    const options = {
+      method: "POST",
+      url: 'https://api.bricks.academy/api:session/problem_session',
+      data: {
+        "user_id": user_id,
+        "problem_id": qid
+      }
+    };
+    axios
+    .request(options)
+    .then(function (response) {
+      setPythonDefault(response.data.code);
+      setCode(response.data.code);
+    })
+    .catch((err) => {
+      let error = err.response ? err.response.data : err;
+      // get error status
+      console.log("catch block...", error);
+    })
+  }
+
   function getQuestion(){
     const options = {
-      method: "GET",
-      url: 'https://api.bricks.academy/api:_codingclub_ide/codingclub_ide_testcase/' + qid,
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      url: 'https://api.bricks.academy/api:problem/problem',
+      data: {
+        "pid": qid
+      },
     };
     axios
     .request(options)
     .then(function (response) {
-      setExample(response.data);
+      setTestcase(response.data._testcase);
     })
     .catch((err) => {
       let error = err.response ? err.response.data : err;
       // get error status
       console.log("catch block...", error);
-    });
+    })
   }
-
 
 
   useEffect(() => {
     if (enterPress && ctrlPress) {
       console.log("enterPress", enterPress);
       console.log("ctrlPress", ctrlPress);
-      handleCompile();
+      sendData();
     }
   }, [ctrlPress, enterPress]);
+
+  useEffect(() =>{
+    if (code){
+      saveCode();
+    }
+  },[code]);
 
   const onChange = (action, data) => {
     switch (action) {
       case "code": {
         setCode(data);
-        // console.log(data);
+        setPythonDefault('');
         break;
       }
       default: {
@@ -130,7 +252,7 @@ const Landing = () => {
   };
 
   const handleSubmit = () => {
-    
+    setSubmitOutputDetails([]);
     setSubmitting(true);
     
     let form = []
@@ -139,9 +261,9 @@ const Landing = () => {
       const newItem = {
         language_id: language.id,
         // encode source code in base64
-        expected_output: btoa(t.output),
-        source_code: btoa(code),
-        stdin: btoa(t.input),
+        expected_output: t.output_base64,
+        source_code: b64EncodeUnicode(code),
+        stdin: t.input_base64,
       }
       form.push(newItem);
     }
@@ -182,7 +304,7 @@ const Landing = () => {
           console.log("too many requests", status);
 
           showErrorToast(
-            `Quota of 100 requests exceeded for the Day! Please read the blog on freeCodeCamp to learn how to setup your own RAPID API Judge0!`,
+            `too many requests`,
             10000
           );
         }
@@ -192,12 +314,13 @@ const Landing = () => {
   };
 
   const handleCompile = () => {
+    setCompileOutputDetails("");
     setProcessing(true);
     const formData = {
       language_id: language.id,
       // encode source code in base64
-      source_code: btoa(code),
-      stdin: btoa(customInput),
+      source_code: b64EncodeUnicode(code),
+      stdin: b64EncodeUnicode(customInput),
     };
 
     const options = {
@@ -227,7 +350,7 @@ const Landing = () => {
           console.log("too many requests", status);
 
           showErrorToast(
-            `Quota of 100 requests exceeded for the Day! Please read the blog on freeCodeCamp to learn how to setup your own RAPID API Judge0!`,
+            `too many requests`,
             10000
           );
         }
@@ -255,12 +378,12 @@ const Landing = () => {
         // still processing
         setTimeout(() => {
           checkStatus(token);
-        }, 2000);
+        }, 1000);
         return;
       } else {
         setProcessing(false);
         setSubmitting(false);
-        setOutputDetails(response.data);
+        setCompileOutputDetails(response.data);
         showSuccessToast(`Compiled Successfully!`);
         return;
       }
@@ -297,15 +420,15 @@ const Landing = () => {
         // still processing
         setTimeout(() => {
           checkStatus_Submit(token);
-        }, 4000);
+        }, 1000);
         return;
       } else {
 
         setProcessing(false);
         setSubmitting(false);
-
+        console.log(response.data.submissions);
         setSubmitOutputDetails(response.data.submissions);
-
+        sendSubmit(response.data.submissions);
         showSuccessToast(`Compiled Successfully!`);
         return;
       }
@@ -319,12 +442,11 @@ const Landing = () => {
 
   useEffect(() => {
     defineTheme("oceanic-next");
-    ;
   }, []);
 
   const showSuccessToast = (msg) => {
-    toast.success(msg || `Compiled Successfully!`, {
-      position: "top-right",
+    toast.success(t(msg || `Compiled Successfully!`), {
+      position: "bottom-right",
       autoClose: 1000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -333,9 +455,52 @@ const Landing = () => {
       progress: undefined,
     });
   };
+
+  const sendSubmit = (submissions) => {
+    if (checkSubmitStatus(submissions)){
+      console.log(1)
+      let submission = submissions[submissions.length - 1]
+      const options = {
+        headers: {
+          "content-type": "application/json"
+        },
+        method: "POST",
+        url: 'https://api.bricks.academy/api:problem/problem_submission',
+        data: {
+          "pid": qid,
+          "user_id": user_id,
+          "code": code,
+          "code_base64": b64EncodeUnicode(code),
+          "code_size": code.length,
+          "token": submission.token,
+          "execution_time": submission.time,
+          "execution_memory": submission.memory
+        }
+      };
+      axios
+      .request(options)
+      .then(function (response) {
+        window.top.location.replace("https://www.codingclub.ai/problems");
+      })
+      .catch((err) => {
+        console.log("err", err);
+        setProcessing(false);
+        showErrorToast();
+      })
+    }
+  }
+  const checkSubmitStatus = (submissions)=>{
+    console.log(submissions)
+    for (let i = 0; i < submissions.length; i++){
+      if (submissions[i].status.description !== 'Accepted'){
+        return false
+      }
+    }
+    return true
+  }
   const showErrorToast = (msg, timer) => {
-    toast.error(msg || `Something went wrong! Please try again.`, {
-      position: "top-right",
+    toast.error(t(msg || `Something went wrong! Please try again.`), {
+      position: "bottom-right",
       autoClose: timer ? timer : 1000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -345,47 +510,67 @@ const Landing = () => {
     });
   };
 
-  function Overlay() {
-    return ReactDOM.createPortal(
-      <div className="right-container flex flex-shrink-0 w-[30%] flex-col fixed  top-10 right-0">
-      <OutputWindow outputDetails={outputDetails} />
-      <div className="flex flex-col items-end">
-        <CustomInput
-          customInput={customInput}
-          setCustomInput={setCustomInput}
-        />
-        <button
-          onClick={handleCompile}
-          disabled={!code}
-          className={classnames(
-            "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
-            !code ? "opacity-50" : ""
-          )}
-        >
-          
-          {processing ? "Processing..." : "Compile and Execute"}
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!code} 
-          className={classnames(
-            "mt-4 border-2 border-black z-10 rounded-md shadow-[5px_5px_0px_0px_rgba(0,0,0)] px-4 py-2 hover:shadow transition duration-200 bg-white flex-shrink-0",
-            !code ? "opacity-50" : ""
-          )}
-        >
-          
-          {submitting ? "Processing..." : "Submit"}
-        </button>
-      </div>
-
-      {outputDetails && <OutputDetails outputDetails={outputDetails} />}
-      {submitOutputDetails && <SubmitOutputDetails submitOutputDetails={submitOutputDetails} />}
-      
-    </div>,
-    document.querySelector('body')
-    );
+  const saveCode = () =>{
+    const options = {
+      method: "POST",
+      url: 'https://api.bricks.academy/api:session/problem_session/c',
+      data: {
+        "user_id": user_id,
+        "problem_id": qid,
+        "code": code
+      }
+    };
+    axios
+    .request(options)
+    .then(function (response) {
+      //pass
+    })
+    .catch((err) => {
+      let error = err.response ? err.response.data : err;
+      // get error status
+      console.log("catch block...", error);
+    })
   }
 
+  const sendData = () => {
+    console.log(customInput)
+    setCompileOutputDetails("");
+    setProcessing(true);
+    const options = {
+      headers: {
+        "content-type": "application/json"
+      },
+      method: "POST",
+      url: 'https://api.bricks.academy/api:problem/execute',
+      data: {
+        "language_id": language.id,
+        // encode source code in base64
+        "code": b64EncodeUnicode(code),
+        "stdin": b64EncodeUnicode(customInput),
+      }
+    };
+    axios
+    .request(options)
+    .then(function (response) {
+      setProcessing(false);
+      setCompileOutputDetails(response.data.response.result);
+      showSuccessToast(`Compiled Successfully!`);
+    })
+    .catch((err) => {
+      console.log("err", err);
+      setProcessing(false);
+      showErrorToast();
+    })
+  };
+
+  const handleSubmitExpand = () =>{
+    if (submitExpanded == true){
+      setSubmitExpanded(false)
+    }else{
+      setSubmitExpanded(true)
+    }
+    console.log(submitExpanded)
+  }
   return (
     <>
       <ToastContainer
@@ -399,62 +584,68 @@ const Landing = () => {
         draggable
         pauseOnHover
       />
-
-      <div className="h-4 w-full bg-gradient-to-r from-violet-900 via-indigo-950 to-violet-600"></div>
-      <nav className ="bg-white border-gray-200">
-        <div className="max-w-screen-xl flex flex-wrap items-center justify-between  p-4">
-          <a className="flex items-center">
-              <img src={process.env.PUBLIC_URL + '/LogoHome.png'}  className="h-16 mr-3" alt="HomeLogo" />
-          </a>
-
-          {/* <div class="hidden w-full md:block md:w-auto" id="navbar-default">
-            <ul class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-              <li>
-                <a href="#" class="block py-2 pl-3 pr-4 text-white bg-blue-700 rounded md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500" aria-current="page">Home</a>
-              </li>
-            </ul>
-          </div> */}
-        </div>
-      </nav>
-
-      <div className="flex flex-row space-x-4 items-start px-4 py-4 w-[70%]">
-        <div className="w-full h-full">
-          <div className = "overflow-y-auto h-90 min-h-full mb-6">
-            <div className = "p-3 bg-stone-50 rounded-tl-lg">
-              <h1 className='text-xl font-mono '>ID: {question.question_id}</h1>
-              <h1 className='text-xl font-mono '>{question.question}</h1>
-              <br></br>
-              <br></br>
-              <h1 className='text-xl font-mono'>
-                Examples
-              </h1>
-              <br></br>
-              <div>
-                {example.map(e => {
-                    return (
-                      <div className='p-5 bg-stone-100 border-4 rounded-lg m-3'>
-                        <h4>Input = {e.input}</h4>
-                        <h4>Output: {e.output}</h4>
-                        <h4>Explanation: {e.explanation}</h4>
-                      </div>
-                    );
-                })}
+      <div className="flex pt-1 flex-col">
+        <div className = "block w-[100%] px-3 py-1">
+          <div className = "flex justify-between" style={{height:"6vh"}}>
+            <div className="mr-2 mb-2">
+              <LanguagesDropdown onSelectChange={onSelectChange} />
+            </div>
+            <div className="flex">
+              <div className="mr-2 mb-2">
+                <FontSizeDropdown onSelectChange={onFontSizeSelectChange} />
+              </div>
+              <div className="mb-2">
+                <ThemeDropdown handleThemeChange={handleThemeChange} theme={theme} />
               </div>
             </div>
+
+          </div>
+        
+          <div className="items-end codeWindow " style={{height:"54vh"}}>
+                <CodeEditorWindow
+                  fontSize = {fontSize}
+                  defaultValue = {PythonDefault}
+                  code={code}
+                  onChange={onChange}
+                  language={language?.value}
+                  theme={theme.value}
+                />
           </div>
 
-          <div className="flex flex-col w-full h-full justify-start items-end">
-            <CodeEditorWindow
-              code={code}
-              onChange={onChange}
-              language={language?.value}
-              theme={theme.value}
-            />
-          </div>
+          <div className='flex' style={{height:"34vh"}}>
+
+                <div className="relative w-[30%] mr-3">
+                  <CustomInput
+                    code = {code}
+                    processing={processing}
+                    sendData={sendData}
+                    customInput={customInput}
+                    setCustomInput={setCustomInput}
+                  />
+                </div>
+
+                <OutputWindow compileOutputDetails={compileOutputDetails} />
+
+            </div>
+        </div>
+        
+        <div className = "w-[100%] px-4 py-1 md:w-[40%] md:fixed md:top-20 md:right-10">
+        {/* <CAccordion activeItemKey={1} onClick={}> */}
+  
+        {(user_id > 0) && (qid > 0) && <CAccordion className={submitExpanded? "w-[100%]": "ml-auto w-32 transition-all duration-700"}>
+          <CAccordionItem itemKey={1}>
+            <Submit 
+            handleExpand={handleSubmitExpand}
+            testcase={testcase} 
+            code = {code}
+            handleSubmit = {handleSubmit}
+            submitOutputDetails = {submitOutputDetails}
+            submitting = {submitting}/>
+            </CAccordionItem>
+        </CAccordion>}
         </div>
       </div>
-      {Overlay()};
-    </>
+  </>
   );
 };
 export default Landing;
